@@ -23,7 +23,7 @@
 
       <Button
         :text="'INICIAR ('+ selecao.length +')'"
-        @tap="onButtonTap"
+        @tap="irPara('filter')"
         col="1"
         :isEnabled="selecao.length > 0"
       />
@@ -82,11 +82,12 @@
 
 <script>
 import { isAndroid, device } from "tns-core-modules/platform/platform";
-
 let fetchModule = require("fetch");
+import Detail from "./Filter";
 
 export default {
   name: "TabAberto",
+  // components: { Filter },
   props: {
     setor: String
   },
@@ -104,6 +105,9 @@ export default {
   },
   created() {},
   methods: {
+    irPara(to){
+        // this.$showModal(this.$routes[to]);
+    },
     isEmulator() {
       if (
         device.model.includes("google_sdk") ||
@@ -182,11 +186,102 @@ export default {
       }
     },
     abrirFiltro() {
-      this.filtro = true;
+      this.$showModal(Detail).then(
+        data => {
+          const vue = this;
+           if (data.numero === ''){
+             if(this.filtrado < this.items){
+             // retirar todos os filtros
+             this.filtrado = [];
+               this.items.forEach((item)=>{
+                 // add todos os items de volta
+                  vue.filtrado.push(item);
+               });
+             }
+             // ordenar os items
+             this.ordenar(data.filtro);
+           }else{
+             this.filtrar(data.numero, data.filtro);
+           }
+          this.filtro = true;
+        }
+      );
     },
 
-    filtrar() {},
-    ordenar() {},
+    filtrar(numero, ordernar) {
+      console.log("OREDENAR ----------------- "+ numero);
+      this.filtrado = [];
+      const vue = this;
+      let processados = 2;
+      this.items.forEach(function(item){
+          if(item.projeto === numero){
+              vue.filtrado.push(item);
+          }
+          processados++;
+        console.log(processados + " >>> " + vue.items.length + " = " + (processados === vue.items.length));
+          if(processados === vue.items.length){
+            console.log("OREDENADO ----------------- ");
+            vue.ordenar(ordernar);
+          }else{
+            console.log("not yeat");
+          }
+      });
+      
+
+    },
+    ordenar(data) {
+      switch (data) {
+               case 0:
+                 console.log("CC");
+                 this.ordenarByCC();
+                 break;
+               case 1:
+                 console.log("OP");
+                 this.ordenarByOP();
+                 break;
+                case 2:                 
+                 console.log("DESC");
+                 this.ordenarByDESC();
+                 break;
+               default:
+                 console.log("CC");
+                 this.ordenarByCC();
+                 break;
+             }
+    },
+    ordenarByCC(){
+      this.filtrado.sort(function(a, b){
+        if (a.projeto > b.projeto) {
+          return 1;
+        }
+        if (a.projeto < b.projeto) {
+          return -1;
+        }
+        return 0;
+      });
+    },
+     ordenarByOP(){
+      this.filtrado.sort(function(a, b){
+        if (a.op > b.op) {
+          return 1;
+        }
+        if (a.op < b.op) {
+          return -1;
+        }
+        return 0;
+      });
+    },
+     ordenarByDESC(){
+      this.filtrado.sort(function(a, b){
+        if (a.descricao > b.descricao) {
+          return 1;
+        }
+        if (a.descricao < b.descricao) {
+          return -1;
+        }
+        return 0;
+      });
+    },
     removeItem(indexSelecao){
         this.selecao.splice(indexSelecao, 1);
     },
@@ -210,7 +305,7 @@ export default {
       }
     }
   },
-  
+
   watch: {
     // observar mudanças de setor
     setor: function() {
