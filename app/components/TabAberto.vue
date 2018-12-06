@@ -21,7 +21,12 @@
         </v-template>
       </ListView>
 
-      <Button text="INICIAR" @tap="onButtonTap" col="1" :isEnabled="selecionado"/>
+      <Button
+        :text="'INICIAR ('+ selecao.length +')'"
+        @tap="onButtonTap"
+        col="1"
+        :isEnabled="selecao.length > 0"
+      />
 
       <ListView
         for="i in um"
@@ -77,6 +82,7 @@
 
 <script>
 import { isAndroid, device } from "tns-core-modules/platform/platform";
+
 let fetchModule = require("fetch");
 
 export default {
@@ -96,9 +102,7 @@ export default {
       selecionado: false
     };
   },
-  created() {
-    console.log("eaeeeeeeeee");
-  },
+  created() {},
   methods: {
     isEmulator() {
       if (
@@ -164,7 +168,18 @@ export default {
 
     onButtonTap(setor) {},
     selecionarTodas() {
-      this.selecao = this.filtrado;
+      const vue = this; 
+      if (this.selecao.length > 0){
+          vue.selecao=[];
+        this.filtrado.forEach(function(item) {
+          item.classe = "list-item";
+        });
+      }else{
+        this.filtrado.forEach(function(item) {
+          item.classe = "list-item-select";
+          vue.selecao.push(item);
+        });
+      }
     },
     abrirFiltro() {
       this.filtro = true;
@@ -172,28 +187,30 @@ export default {
 
     filtrar() {},
     ordenar() {},
+    removeItem(indexSelecao){
+        this.selecao.splice(indexSelecao, 1);
+    },
 
     toggleSelecao(args) {
       const vue = this;
       let indexSelecao = -1;
-      const encontrado = this.selecao.find(function(item, index) {
+
+      this.selecao.find(function(item, index) {
         if (item.op === vue.filtrado[args.index].op) {
           indexSelecao = index;
           return;
         }
       });
       if (indexSelecao > -1) {
-        console.log("Econtrado " + this.selecao[indexSelecao]);
-        this.filtrado[args.index].classe = "list-item";
-        this.selecao.splice(indexSelecao, indexSelecao + 1);
+          vue.removeItem(indexSelecao);
+          this.filtrado[args.index].classe = "list-item";
       } else {
         this.filtrado[args.index].classe = "list-item-select";
         this.selecao.push(this.filtrado[args.index]);
       }
-      console.log("Item with index: " + args.index + " tapped");
-      console.log(this.selecao.length);
     }
   },
+  
   watch: {
     // observar mudanças de setor
     setor: function() {
