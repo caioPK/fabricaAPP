@@ -2,8 +2,8 @@
   <Page ref="page" id="page">
     <ActionBar title="Welcome to NativeScript-Vue!" android:flat="true"/>
     <TabView
-      android:tabBackgroundColor="#53ba82"
-      android:tabTextColor="#c4ffdf"
+      android:tabBackgroundColor="#e6b800"
+      android:tabTextColor="#997a00"
       android:selectedTabTextColor="#ffffff"
       androidSelectedTabHighlightColor="#ffffff"
       ref="tabMenu"
@@ -11,15 +11,19 @@
       :selectedIndex="index"
       @selectedIndexChange="mudou"
     >
-      <TabViewItem title="SETOR">
+      <TabViewItem title="SETOR" 
+      >
+       
         <ScrollView orientation="vertical">
           <GridLayout
             columns="* , *"
             rows="150, 150, 150"
-            backgroundColor="lightgray"
             class="container-setor"
           >
-            <Button
+            <GridLayout columns="*" rows="*" v-show="emExec" colSpan="2" rowSpan="3" >
+              <Label text="Já existe atividades em execução" textWrap="true"  class="container-aviso"/>
+            </GridLayout>
+            <Button v-show="!emExec"
               v-for="setor in setores"
               :text="setor.nome"
               :key="setor.nome"
@@ -32,12 +36,13 @@
         </ScrollView>
       </TabViewItem>
       <TabViewItem title="EM ABERTO">
-        <tab-aberto :setor="setorEscolhido"></tab-aberto>
+        <GridLayout columns="*" rows="*" >
+                <tab-aberto v-show="!emExec" :setor="setorEscolhido" @iniciar="iniciarExec" ></tab-aberto>
+                <Label v-show="emExec" textWrap="true"  text="Já existe atividades em execução" class="container-aviso"/>
+          </GridLayout>
       </TabViewItem>
       <TabViewItem title="EM EXECUÇÃO">
-        <GridLayout columns="*" rows="*">
-          <Label class="message" text="Tab 3 Content" col="0" row="0"/>
-        </GridLayout>
+        <tab-exec :lista="executando" @finalizar="finalizarExec"></tab-exec>
       </TabViewItem>
     </TabView>
   </Page>
@@ -45,8 +50,9 @@
 
 <script>
 import TabAberto from "./TabAberto";
+import TabExec from "./TabExec";
 export default {
-  components: { TabAberto },
+  components: { TabAberto, TabExec },
   data() {
     return {
       setorEscolhido: "",
@@ -89,6 +95,11 @@ export default {
         }
       ],
       index: 0,
+      executando:{
+        matricula: '',
+        listaOps: []
+      },
+      emExec: false,
       msg: "Hello World!"
     };
   },
@@ -97,18 +108,33 @@ export default {
   },
   methods: {
     mudou(value) {
-      console.log(value.value);
-      this.index = value.value;
     },
     onButtonTap(setor) {
       this.setorEscolhido = setor;
       this.index = 1;
       console.log(setor + "  " + this.index);
+    },
+    iniciarExec(obj){
+      // PASSAR OBJETO PARA EXEC
+      this.executando = obj;
+      // MUDAR ABA
+      this.index=2;
+      // TRAVAR ABAS
+      this.emExec = true;
+    },
+    finalizarExec(){
+      console.log('FINALIZANDO');
+      this.emExec = false;
+      this.index = 0;
+      this.executando={
+        matricula: '',
+        listaOps: []
+      };
     }
   },
   watch: {
-    index: function() {
-      console.log("mudei");
+    index: function(){
+      
     }
   }
 };
@@ -124,7 +150,7 @@ ActionBar {
   padding: 8px;
 }
 .botao-setor {
-  background: burlywood;
+  background: #e6b800;
   font-size: 18px;
 }
 .container-botao {
@@ -135,5 +161,10 @@ ActionBar {
   text-align: center;
   font-size: 20px;
   color: #333333;
+}
+.container-aviso{
+  font-size: 24px; 
+  text-align:center;
+  vertical-align: center;
 }
 </style>

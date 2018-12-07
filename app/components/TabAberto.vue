@@ -1,81 +1,86 @@
 <template>
-  <GridLayout columns="*" rows="56, *">
-    <GridLayout columns="56, * , 56" row="0">
-      <ListView
-        for="i in um"
-        @itemTap="selecionarTodas"
-        col="0"
-        style="height: 56px"
-        separatorColor="transparent"
-        v-show="filtro"
-      >
-        <v-template>
-          <Image
-            top="8"
-            left="8"
-            width="24"
-            height="24"
-            src="~/assets/images/select-all.png"
-            class="icon"
-          />
-        </v-template>
-      </ListView>
-
-      <Button
-        :text="'INICIAR ('+ selecao.length +')'"
-        @tap="irPara('filter')"
-        col="1"
-        :isEnabled="selecao.length > 0"
-      />
-
-      <ListView
-        for="i in um"
-        @itemTap="abrirFiltro"
-        col="2"
-        style="height: 56px"
-        separatorColor="transparent"
-      >
-        <v-template>
-          <Image
-            top="8"
-            left="8"
-            width="24"
-            height="24"
-            src="~/assets/images/filter-icon.png"
-            class="icon"
-          />
-        </v-template>
-      </ListView>
+  <GridLayout columns="*" rows="*">
+    <GridLayout columns="*" rows="*"  v-show="(items.length === 0 && !isBusy)">
+      <Label text="Não há nada aqui,por favor selecione um setor" textWrap="true"  class="container-aviso"/>
     </GridLayout>
+    <GridLayout columns="*" rows="56, *" v-show="(items.length > 0 || isBusy)">
+      <GridLayout columns="56, * , 56" row="0">
+        <ListView
+          for="i in um"
+          @itemTap="selecionarTodas"
+          col="0"
+          style="height: 56px"
+          separatorColor="transparent"
+          v-show="filtro"
+        >
+          <v-template>
+            <Image
+              top="8"
+              left="8"
+              width="24"
+              height="24"
+              src="~/assets/images/select-all.png"
+              class="icon"
+            />
+          </v-template>
+        </ListView>
 
-    <ActivityIndicator :busy="isBusy" class="activity-indicator" row="1"/>
-    <ListView class="list-group" for="op in filtrado" @itemTap="toggleSelecao" row="1">
-      <v-template>
-        <StackLayout orientation="vertical" :class="op.classe">
-          <FlexboxLayout flexDirection="row" justifyContent="space-around">
-            <StackLayout orientation="vertical">
-              <Label text="Projeto" class="label-item"/>
-              <Label :text="op.projeto" class="info-item"/>
-            </StackLayout>
-            <StackLayout orientation="vertical">
-              <Label text="Nº OP" class="label-item"/>
-              <Label :text="op.op" class="info-item"/>
-            </StackLayout>
-            <StackLayout orientation="vertical">
-              <Label text="Código" class="label-item"/>
-              <Label :text="op.codigo" class="info-item"/>
-            </StackLayout>
-            <StackLayout orientation="vertical">
-              <Label text="QTD" class="label-item"/>
-              <Label :text="op.qtd" class="info-item"/>
-            </StackLayout>
-          </FlexboxLayout>
+        <Button
+          :text="'INICIAR ('+ selecao.length +')'"
+          @tap="iniciarOPS"
+          col="1"
+          :isEnabled="selecao.length > 0"
+        />
 
-          <Label :text="op.descricao" class="descricao-item"/>
-        </StackLayout>
-      </v-template>
-    </ListView>
+        <ListView
+          for="i in um"
+          @itemTap="abrirFiltro"
+          col="2"
+          style="height: 56px"
+          separatorColor="transparent"
+        >
+          <v-template>
+            <Image
+              top="8"
+              left="8"
+              width="24"
+              height="24"
+              src="~/assets/images/filter-icon.png"
+              class="icon"
+            />
+          </v-template>
+        </ListView>
+      </GridLayout>
 
+      <ActivityIndicator :busy="isBusy" class="activity-indicator" row="1"/>
+      <ListView class="list-group" for="op in filtrado" @itemTap="toggleSelecao" row="1">
+        <v-template>
+          <StackLayout orientation="vertical" :class="op.classe">
+            <FlexboxLayout flexDirection="row" justifyContent="space-around">
+              <StackLayout orientation="vertical">
+                <Label text="Projeto" class="label-item"/>
+                <Label :text="op.projeto" class="info-item"/>
+              </StackLayout>
+              <StackLayout orientation="vertical">
+                <Label text="Nº OP" class="label-item"/>
+                <Label :text="op.op" class="info-item"/>
+              </StackLayout>
+              <StackLayout orientation="vertical">
+                <Label text="Código" class="label-item"/>
+                <Label :text="op.codigo" class="info-item"/>
+              </StackLayout>
+              <StackLayout orientation="vertical">
+                <Label text="QTD" class="label-item"/>
+                <Label :text="op.qtd" class="info-item"/>
+              </StackLayout>
+            </FlexboxLayout>
+
+            <Label :text="op.descricao" class="descricao-item"/>
+          </StackLayout>
+        </v-template>
+      </ListView>
+
+    </GridLayout>
     <!--<Button text="Button" @tap="onButtonTap" row="2"/>-->
   </GridLayout>
 </template>
@@ -84,6 +89,7 @@
 import { isAndroid, device } from "tns-core-modules/platform/platform";
 let fetchModule = require("fetch");
 import Detail from "./Filter";
+import ModalMatricula from "./ModalMatricula" 
 
 export default {
   name: "TabAberto",
@@ -103,7 +109,6 @@ export default {
       selecionado: false
     };
   },
-  created() {},
   methods: {
     irPara(to){
         // this.$showModal(this.$routes[to]);
@@ -162,7 +167,6 @@ export default {
               vue.items.push(novaOP);
             });
             vue.filtrado = vue.items;
-            // alert({title: "POST Response", message: JSON.stringify(response), okButtonText: "Close"});
           },
           function(error) {
             console.log(JSON.stringify(error));
@@ -170,7 +174,39 @@ export default {
         );
     },
 
-    onButtonTap(setor) {},
+    iniciarOPS() {
+      const vue = this;
+        // PEDIR MATRICULA
+        this.$showModal(ModalMatricula).then(
+          data => {
+          // VERIFICAR SE PREENCHIDA
+            if( data.numero === ''){
+              alert({title: "AÇÃO NECESSÁRIA", message: "Você deve fornecer seu número de matrícula", okButtonText: "ok"}).then( () =>{
+                  vue.iniciarOPS()
+                }
+              );
+            }else{
+                // MONTAR OBJETO
+                const obj = {
+                  matricula: data.numero,
+                  listaOps: vue.selecao
+                }
+                // EMITIR EVENTO COM OBJETO
+                vue.$emit("iniciar", obj);
+                this.limparSelecoes();
+            }
+        });
+      
+    },
+    // -------------------------------------
+    // ------------- FUNÇÕES DE SELEÇÃO
+    // -------------------------------------
+    limparSelecoes(){
+      this.selecao=[];
+      this.filtrado=[];
+      this.items=[];
+      this.filtro=false;
+    },
     selecionarTodas() {
       const vue = this; 
       if (this.selecao.length > 0){
@@ -185,6 +221,32 @@ export default {
         });
       }
     },
+    removeItem(indexSelecao){
+        this.selecao.splice(indexSelecao, 1);
+    },
+
+    toggleSelecao(args) {
+      const vue = this;
+      let indexSelecao = -1;
+
+      this.selecao.find(function(item, index) {
+        if (item.op === vue.filtrado[args.index].op) {
+          indexSelecao = index;
+          return;
+        }
+      });
+      if (indexSelecao > -1) {
+          vue.removeItem(indexSelecao);
+          this.filtrado[args.index].classe = "list-item";
+      } else {
+        this.filtrado[args.index].classe = "list-item-select";
+        this.selecao.push(this.filtrado[args.index]);
+      }
+    }, 
+
+    // -------------------------------------
+    // ------------- FUNÇÕES DE FILTRO
+    // -------------------------------------
     abrirFiltro() {
       this.$showModal(Detail).then(
         data => {
@@ -209,7 +271,6 @@ export default {
     },
 
     filtrar(numero, ordernar) {
-      console.log("OREDENAR ----------------- "+ numero);
       this.filtrado = [];
       const vue = this;
       let processados = 2;
@@ -217,18 +278,14 @@ export default {
           if(item.projeto === numero){
               vue.filtrado.push(item);
           }
-          processados++;
-        console.log(processados + " >>> " + vue.items.length + " = " + (processados === vue.items.length));
-          if(processados === vue.items.length){
-            console.log("OREDENADO ----------------- ");
-            vue.ordenar(ordernar);
-          }else{
-            console.log("not yeat");
-          }
       });
-      
-
+      vue.ordenar(ordernar);
     },
+
+    // -------------------------------------
+    // ------------- FUNÇÕES DE ORDENAÇÃO
+    // -------------------------------------
+
     ordenar(data) {
       switch (data) {
                case 0:
@@ -282,34 +339,15 @@ export default {
         return 0;
       });
     },
-    removeItem(indexSelecao){
-        this.selecao.splice(indexSelecao, 1);
-    },
-
-    toggleSelecao(args) {
-      const vue = this;
-      let indexSelecao = -1;
-
-      this.selecao.find(function(item, index) {
-        if (item.op === vue.filtrado[args.index].op) {
-          indexSelecao = index;
-          return;
-        }
-      });
-      if (indexSelecao > -1) {
-          vue.removeItem(indexSelecao);
-          this.filtrado[args.index].classe = "list-item";
-      } else {
-        this.filtrado[args.index].classe = "list-item-select";
-        this.selecao.push(this.filtrado[args.index]);
-      }
-    }
+    
   },
 
   watch: {
     // observar mudanças de setor
     setor: function() {
+      console.log(this.setor)
       if (this.setor != null) {
+        this.limparSelecoes();
         this.buscarOps();
       }
     }
@@ -351,5 +389,11 @@ ActionBar {
 .label-item {
   font-size: 10px;
   font-weight: bold;
+}
+.container-aviso{
+  font-size: 24px; 
+  text-align:center;
+  vertical-align: center;
+  padding: 8px;
 }
 </style>
